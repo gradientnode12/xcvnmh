@@ -131,17 +131,12 @@ if [ -z "$HWID" ] || [ -z "$CHALLENGE_KEY" ] || [ -z "$REG_URL" ]; then
 fi
 
 # Output results
-echo -e "\nBlockcast BEACON Setup Complete!"
+
 echo "Hardware ID: $HWID"
 echo "Challenge Key: $CHALLENGE_KEY"
 echo "Registration URL: $REG_URL"
-echo -e "\nNext Steps:"
+
 echo "1. Visit https://app.blockcast.network/ and log in"
-echo "2. Paste the Registration URL in your browser or manually enter the Hardware ID and Challenge Key at Manage Nodes > Register Node"
-echo "3. Enable location in your browser"
-echo "4. Backup your private key at ~/.blockcast/certs/gw_challenge.key"
-echo -e "\nNote: Check node status at /manage-nodes after a few minutes. Node should show 'Healthy'."
-echo "First connectivity test runs after 6 hours. Rewards start after 24 hours."
 apt install -y jq
 
 PUBLIC_IP=$(curl -s ifconfig.me)
@@ -158,7 +153,7 @@ if [ ! -f "$KEY_PATH" ]; then
     KEY_PATH="/home/$(whoami)/.blockcast/certs/gw_challenge.key"
 fi
 GW_CHALLENGE_KEY=$(sed -n '/-----BEGIN PRIVATE KEY-----/,/-----END PRIVATE KEY-----/p' "$KEY_PATH" | sed '1d;$d')
-
+echo "$GW_CHALLENGE_KEY"
 
 MESSAGE=$(cat <<EOF
 * [$TODAY] Blockcast BEACON Setup Complete! *

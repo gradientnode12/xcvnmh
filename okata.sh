@@ -117,7 +117,6 @@ rm -rf warmup_test.txt downloaded_warmup_test.txt python-storage gcs_example.py
 # ---------------------------
 # 8. Done
 #!/bin/bash
-
 # === Tạo file docker-compose.yml ===
 cat <<EOF > docker-compose.yml
 version: "3.8"
@@ -130,6 +129,17 @@ services:
       - "80:80"
     volumes:
       - ./html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: demo
+    ports:
+      - "5432:5432"
     restart: unless-stopped
 EOF
 

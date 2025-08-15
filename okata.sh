@@ -116,5 +116,44 @@ rm -rf warmup_test.txt downloaded_warmup_test.txt python-storage gcs_example.py
 
 # ---------------------------
 # 8. Done
+#!/bin/bash
+
+# === Tạo file docker-compose.yml ===
+cat <<EOF > docker-compose.yml
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+EOF
+
+# === Tạo thư mục html và file index.html mẫu ===
+mkdir -p html
+cat <<EOF > html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome</title>
+</head>
+<body>
+    <h1>Hello from Nginx in Docker!</h1>
+    <p>$(date)</p>
+</body>
+</html>
+EOF
+
+# === Khởi động Nginx ===
+docker compose up -d
+
+echo "✅ Nginx đã chạy! Truy cập http://$(curl -s ifconfig.me) để xem kết quả."
+
+
+
 # ---------------------------
 echo "=== GCP Warm-up Completed Successfully! ==="

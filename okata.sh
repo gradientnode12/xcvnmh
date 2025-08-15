@@ -1,27 +1,16 @@
 #!/bin/bash
-# =========================================
-# Google Cloud "Warm-up" Complete Script
-# =========================================
 
-echo "=== GCP Warm-up Script Started ==="
-
-# ---------------------------
-# 0. Kiểm tra môi trường
-# ---------------------------
-command -v gcloud >/dev/null 2>&1 || { echo "gcloud CLI not found!"; exit 1; }
-command -v python3 >/dev/null 2>&1 || { echo "Python3 not found!"; exit 1; }
-
-# ---------------------------
-# 1. Random sleep function
-# ---------------------------
+# ======================================
+# Hàm ngủ ngẫu nhiên
+# ======================================
 rand_sleep() {
-  sleep $((RANDOM % 5 + 2))  # 2–6s random
+  sleep $((RANDOM % 3 + 2))
 }
 
-# ---------------------------
-# 2. Gọi Discovery APIs
-# ---------------------------
-echo "[1/8] Calling Discovery APIs..."
+# ======================================
+# 1. Gọi Discovery APIs
+# ======================================
+echo "[1/8] Calling Google Discovery APIs..."
 APIS=("abusiveexperiencereport:v1" "books:v1" "youtube:v3" "translate:v2" "drive:v3")
 for API in "${APIS[@]}"; do
   NAME="${API%%:*}"
@@ -31,140 +20,102 @@ for API in "${APIS[@]}"; do
   rand_sleep
 done
 
-# ---------------------------
-# 3. Gọi API đọc dữ liệu
-# ---------------------------
-echo "[2/8] Calling public APIs..."
-# Books
-curl -s "https://www.googleapis.com/books/v1/volumes?q=cloud+computing" >/dev/null
-rand_sleep
-# Translate
-curl -s "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=hello+world" >/dev/null
-rand_sleep
-# YouTube
-curl -s "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=1&regionCode=US" >/dev/null
+# ======================================
+# 2. Gọi thử Google Translate API (Public GET)
+# ======================================
+echo "[2/8] Calling Google Translate public endpoint..."
+curl -s "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=hello%20world" >/dev/null
 rand_sleep
 
-# ---------------------------
-# 4. Gcloud Storage upload/download
-# ---------------------------
-echo "[3/8] Create bucket + upload/download file..."
+# ======================================
+# 3. Cloud Storage: Tạo bucket, upload, download, xóa
+# ======================================
+echo "[3/8] Interacting with Google Cloud Storage..."
+PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
+if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "(unset)" ]]; then
+  PROJECT_ID="warmup-project-$RANDOM"
+  gcloud projects create "$PROJECT_ID"
+  gcloud config set project "$PROJECT_ID"
+fi
+
 BUCKET_NAME="warmup-bucket-$RANDOM"
-gcloud storage buckets create $BUCKET_NAME --location=US
+echo "Creating bucket: $BUCKET_NAME"
+gcloud storage buckets create "$BUCKET_NAME" --location=US >/dev/null
 
-# File test
-echo "Warm-up file for GCP - $(date)" > warmup_test.txt
-gcloud storage cp warmup_test.txt gs://$BUCKET_NAME/warmup_test.txt
-rand_sleep
-gcloud storage cp gs://$BUCKET_NAME/warmup_test.txt downloaded_warmup_test.txt
-rand_sleep
+echo "Creating test file..."
+echo "Warm-up test $(date)" > test.txt
 
-# ---------------------------
-# 5. Query Compute Engine lightly
-# ---------------------------
-echo "[4/8] Query Compute Engine..."
-gcloud compute zones list --limit=2
-rand_sleep
-ZONES=$(gcloud compute zones list --limit=1 --format="value(name)")
-gcloud compute machine-types list --zones=$ZONES --limit=3
+echo "Uploading file..."
+gcloud storage cp test.txt gs://$BUCKET_NAME/ >/dev/null
 rand_sleep
 
-# ---------------------------
-# 6. Clone Python Storage SDK & test
-# ---------------------------
-echo "[5/8] Clone python-storage repo..."
-git clone https://github.com/googleapis/python-storage.git
+echo "Downloading file..."
+gcloud storage cp gs://$BUCKET_NAME/test.txt ./test_download.txt >/dev/null
+rand_sleep
+
+echo "Deleting file & bucket..."
+gcloud storage rm gs://$BUCKET_NAME/test.txt >/dev/null
+gcloud storage buckets delete "$BUCKET_NAME" --quiet >/dev/null
+
+# ======================================
+# 4. Một số lệnh gcloud khác
+# ======================================
+echo "[4/8] Running various gcloud commands..."
+gcloud compute regions list >/dev/null
+rand_sleep
+gcloud compute zones list >/dev/null
+rand_sleep
+gcloud services list --available >/dev/null
+rand_sleep
+gcloud iam service-accounts list >/dev/null
+rand_sleep
+
+# ======================================
+# 5. Clone Git repo Google
+# ======================================
+echo "[5/8] Cloning Google Cloud Storage Python client..."
+git clone https://github.com/googleapis/python-storage.git >/dev/null
 cd python-storage
-ls -lah | head -n 10
-rand_sleep
-
-echo "[6/8] Installing SDK & running Python example..."
-pip3 install -q google-cloud-storage || true
-
-cat <<EOF > gcs_example.py
-from google.cloud import storage
-import os
-
-bucket_name = "$BUCKET_NAME"
-file_name = "sdk_test.txt"
-
-with open(file_name, "w") as f:
-    f.write("GCS SDK test file - warm-up")
-
-client = storage.Client()
-bucket = client.bucket(bucket_name)
-blob = bucket.blob(file_name)
-blob.upload_from_filename(file_name)
-print("[PYTHON SDK] Uploaded:", file_name)
-
-for blob in bucket.list_blobs():
-    print("[PYTHON SDK] Found object:", blob.name)
-EOF
-
-python3 gcs_example.py || echo "[!] Python SDK example failed"
+ls >/dev/null
 cd ..
 rand_sleep
 
-# ---------------------------
-# 7. Cleanup
-# ---------------------------
-echo "[7/8] Cleanup bucket & files..."
-gcloud storage rm gs://$BUCKET_NAME/warmup_test.txt || true
-gcloud storage rm gs://$BUCKET_NAME/sdk_test.txt || true
-gcloud storage buckets delete $BUCKET_NAME --quiet || true
-rm -rf warmup_test.txt downloaded_warmup_test.txt python-storage gcs_example.py
-
-# ---------------------------
-# 8. Done
-#!/bin/bash
-# === Tạo file docker-compose.yml ===
+# ======================================
+# 6. Docker Compose với Nginx & Postgres
+# ======================================
+echo "[6/8] Setting up Docker Compose with Nginx & Postgres..."
 cat <<EOF > docker-compose.yml
 version: "3.8"
-
 services:
   nginx:
     image: nginx:latest
-    container_name: nginx_server
     ports:
       - "80:80"
-    volumes:
-      - ./html:/usr/share/nginx/html:ro
-    restart: unless-stopped
-
   postgres:
     image: postgres:latest
-    container_name: postgres_db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: demo
+      POSTGRES_PASSWORD: example
     ports:
       - "5432:5432"
-    restart: unless-stopped
 EOF
 
-# === Tạo thư mục html và file index.html mẫu ===
-mkdir -p html
-cat <<EOF > html/index.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Welcome</title>
-</head>
-<body>
-    <h1>Hello from Nginx in Docker!</h1>
-    <p>$(date)</p>
-</body>
-</html>
-EOF
-
-# === Khởi động Nginx ===
 docker compose up -d
+rand_sleep
 
-echo "✅ http://$(curl -s ifconfig.me)"
-
-echo "=== Up Spring! ==="
 git clone https://github.com/spring-guides/gs-spring-boot.git
 cd gs-spring-boot/complete
 ./gradlew bootRun
-echo "=== GCP Warm-up Completed Successfully! ==="
+
+# ======================================
+# 7. Chạy web Python đơn giản
+# ======================================
+echo "[7/8] Running simple Python web server..."
+python3 -m http.server 8080 &
+SERVER_PID=$!
+rand_sleep
+kill $SERVER_PID
+
+# ======================================
+# 8. Hoàn tất
+# ======================================
+echo "[8/8] Warm-up completed!"

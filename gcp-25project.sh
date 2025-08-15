@@ -57,3 +57,4 @@ for ((i = 0; i < 5; i++)); do
   gcloud alpha billing projects link "$project_id" --billing-account="$billing_account_id"
   gcloud config set project "$project_id"
   echo -e "${ORANGE}Đã tạo dự án '$project_name' (ID: $project_id).${NC}"
+done

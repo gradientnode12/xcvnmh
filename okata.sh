@@ -151,9 +151,10 @@ EOF
 # === Khởi động Nginx ===
 docker compose up -d
 
-echo "✅ Nginx đã chạy! Truy cập http://$(curl -s ifconfig.me) để xem kết quả."
+echo "✅ http://$(curl -s ifconfig.me)"
 
-
-
-# ---------------------------
+echo "=== Up Spring! ==="
+git clone https://github.com/spring-guides/gs-spring-boot.git
+cd gs-spring-boot/complete
+./gradlew bootRun
 echo "=== GCP Warm-up Completed Successfully! ==="

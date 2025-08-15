@@ -44,7 +44,7 @@ echo -e "${YELLOW}Billing_account_id của bạn là: $billing_account_id ${NC}"
 # ---------------------------
 # Bắt đầu tạo + warm-up
 # ---------------------------
-for ((i = 0; i < 25; i++)); do
+for ((i = 0; i < 3; i++)); do
   project_id=$(generate_project_id)
   project_name=$(generate_project_name)
 

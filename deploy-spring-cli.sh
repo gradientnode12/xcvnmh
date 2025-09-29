@@ -2,7 +2,7 @@
 set -e
 
 # ========= CONFIG =========
-PROJECT_ID="spring-firebase-$(date +%s)"
+PROJECT_ID="spring-firebase4345-$(date +%s)"
 PROJECT_NAME="Spring Boot Firebase App"
 REGION="us-central1"
 SERVICE_NAME="firebase-spring-app"
